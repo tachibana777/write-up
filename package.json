@@ -1,0 +1,10 @@
+{
+  "name": "write-up-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix exotic-equinox run dev",
+    "start": "npm --prefix exotic-equinox run dev",
+    "build": "npm --prefix exotic-equinox run build",
+    "preview": "npm --prefix exotic-equinox run preview"
+  }
+}
