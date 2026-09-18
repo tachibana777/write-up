@@ -64,25 +64,21 @@ export function setTheme(theme: LIGHT_DARK_MODE, withTransition = false): void {
 		return;
 	}
 
-	const endRadius = Math.hypot(window.innerWidth, window.innerHeight);
-
 	// @ts-ignore
 	const transition = document.startViewTransition(() => {
 		applyThemeToDocument(theme);
 	});
 
 	transition.ready.then(() => {
-		const clipPath = [
-			"circle(0px at 0% 0%)",
-			`circle(${endRadius}px at 0% 0%)`,
-		];
-
 		document.documentElement.animate(
 			{
-				clipPath: clipPath,
+				clipPath: [
+					"polygon(-100% -100%, 95% -100%, -100% 95%)",
+					"polygon(-100% -100%, 305% -100%, -100% 305%)",
+				],
 			},
 			{
-				duration: 600,
+				duration: 550,
 				easing: "cubic-bezier(0.4, 0, 0.2, 1)",
 				pseudoElement: "::view-transition-new(root)",
 			},
