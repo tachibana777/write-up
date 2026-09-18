@@ -6,6 +6,19 @@ html.is-animating .transition-swup-fade {
     @apply opacity-0 translate-y-1;
 }
 
+/* Theme toggle View Transition (sweep from top-left to bottom-right) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+    z-index: 1;
+}
+::view-transition-new(root) {
+    z-index: 9999;
+}
+
 /* Fade-in animations for components */
 @keyframes fade-in-up {
     0% {

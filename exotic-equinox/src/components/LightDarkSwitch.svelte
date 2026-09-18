@@ -19,8 +19,9 @@ onMount(() => {
 });
 
 function switchScheme(newMode: LIGHT_DARK_MODE) {
+	if (mode === newMode) return;
 	mode = newMode;
-	setTheme(newMode);
+	setTheme(newMode, true);
 }
 
 function toggleScheme() {

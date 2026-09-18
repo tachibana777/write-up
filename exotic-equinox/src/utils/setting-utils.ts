@@ -51,9 +51,43 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 	);
 }
 
-export function setTheme(theme: LIGHT_DARK_MODE): void {
+export function setTheme(theme: LIGHT_DARK_MODE, withTransition = false): void {
 	localStorage.setItem("theme", theme);
-	applyThemeToDocument(theme);
+
+	if (
+		!withTransition ||
+		typeof document === "undefined" ||
+		!("startViewTransition" in document) ||
+		window.matchMedia("(prefers-reduced-motion: reduce)").matches
+	) {
+		applyThemeToDocument(theme);
+		return;
+	}
+
+	const endRadius = Math.hypot(window.innerWidth, window.innerHeight);
+
+	// @ts-ignore
+	const transition = document.startViewTransition(() => {
+		applyThemeToDocument(theme);
+	});
+
+	transition.ready.then(() => {
+		const clipPath = [
+			"circle(0px at 0% 0%)",
+			`circle(${endRadius}px at 0% 0%)`,
+		];
+
+		document.documentElement.animate(
+			{
+				clipPath: clipPath,
+			},
+			{
+				duration: 600,
+				easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+				pseudoElement: "::view-transition-new(root)",
+			},
+		);
+	});
 }
 
 export function getStoredTheme(): LIGHT_DARK_MODE {
