@@ -1,15 +1,15 @@
 /* Page transition animations with Swup */
 html.is-changing .transition-swup-fade {
-    @apply transition-all duration-200
+    @apply transition-all duration-100 ease-out;
 }
 html.is-animating .transition-swup-fade {
-    @apply opacity-0 translate-y-4
+    @apply opacity-0 translate-y-1;
 }
 
 /* Fade-in animations for components */
 @keyframes fade-in-up {
     0% {
-        transform: translateY(2rem);
+        transform: translateY(0.75rem);
         opacity: 0;
     }
     100% {
@@ -21,14 +21,14 @@ html.is-animating .transition-swup-fade {
 /* Main components */
 .onload-animation {
     opacity: 0;
-    animation: 300ms fade-in-up;
+    animation: 150ms ease-out fade-in-up;
     animation-fill-mode: forwards;
 }
 #navbar {
-    animation-delay: 0ms
+    animation-delay: 0ms;
 }
 #sidebar {
-    animation-delay: 100ms
+    animation-delay: 20ms;
 }
 #swup-container {
     outline: none;
@@ -37,17 +37,18 @@ html.is-animating .transition-swup-fade {
     animation-delay: var(--content-delay);
 }
 .footer {
-    animation-delay: 250ms;
+    animation-delay: 50ms;
 }
 #banner-credit {
-    animation-delay: 400ms;
+    animation-delay: 50ms;
 }
 
 /* Post content */
-#post-container :nth-child(1) { animation-delay: calc(var(--content-delay) + 0ms) }
-#post-container :nth-child(2) { animation-delay: calc(var(--content-delay) + 50ms) }
-#post-container :nth-child(3) { animation-delay: calc(var(--content-delay) + 100ms) }
-#post-container :nth-child(4) { animation-delay: calc(var(--content-delay) + 175ms) }
-#post-container :nth-child(5) { animation-delay: calc(var(--content-delay) + 250ms) }
-#post-container :nth-child(6) { animation-delay: calc(var(--content-delay) + 325ms) }
+#post-container :nth-child(1) { animation-delay: 0ms }
+#post-container :nth-child(2) { animation-delay: 20ms }
+#post-container :nth-child(3) { animation-delay: 40ms }
+#post-container :nth-child(4) { animation-delay: 60ms }
+#post-container :nth-child(5) { animation-delay: 80ms }
+#post-container :nth-child(6) { animation-delay: 100ms }
+
 

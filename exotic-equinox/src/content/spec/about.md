@@ -1,9 +1,18 @@
-# About
-This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
+# เกี่ยวกับผู้เขียน & เว็บไซต์
 
-::github{repo="saicaca/fuwari"}
+### ช่องทางการติดต่อ & ผลงาน
+- 🌐 **Portfolio:** [https://portfolio1-lilac-two.vercel.app/](https://portfolio1-lilac-two.vercel.app/)
+- 🐙 **GitHub:** [https://github.com/tachibana777](https://github.com/tachibana777)
 
-> ### Sources of images used in this site
-> - [Unsplash](https://unsplash.com/)
-> - [星と少女](https://www.pixiv.net/artworks/108916539) by [Stella](https://www.pixiv.net/users/93273965)
-> - [Rabbit - v1.4 Showcase](https://civitai.com/posts/586908) by [Rabbit_YourMajesty](https://civitai.com/user/Rabbit_YourMajesty)
+---
+
+เว็บไซต์นี้รวบรวมบันทึกการเรียนรู้ด้าน Cybersecurity และ CTF Write-ups โดยเน้นการอธิบายแนวคิด ขั้นตอนการวิเคราะห์ และเครื่องมือที่ใช้ เพื่อให้สามารถกลับมาทบทวนหรือทดลองทำซ้ำได้
+
+## เนื้อหาหลัก
+
+- CTF Write-ups
+- Digital Forensics และ Incident Analysis
+- Cryptography และ Reverse Engineering
+- เทคนิคและเครื่องมือด้าน Cybersecurity
+
+เนื้อหาทั้งหมดจัดทำขึ้นเพื่อการศึกษาและการเรียนรู้เท่านั้น

@@ -29,23 +29,26 @@ export default defineConfig({
 	site: "https://fuwari.vercel.app/",
 	base: "/",
 	trailingSlash: "always",
+	prefetch: {
+		prefetchAll: true,
+		defaultStrategy: 'viewport',
+	},
 	integrations: [
 		tailwind({
 			nesting: true,
 		}),
 		swup({
 			theme: false,
-			animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
-			// the default value `transition-` cause transition delay
-			// when the Tailwind class `transition-all` is used
+			animationClass: "transition-swup-",
 			containers: ["main", "#toc"],
-			smoothScrolling: true,
+			smoothScrolling: false,
 			cache: true,
-			preload: true,
+			preload: { hover: true, visible: true },
 			accessibility: true,
 			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
+			loadOnIdle: false,
 		}),
 		icon({
 			include: {
