@@ -44,16 +44,6 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		LinkPreset.About,
-		{
-			name: "Portfolio",
-			url: "https://portfolio1-lilac-two.vercel.app/",
-			external: true,
-		},
-		{
-			name: "GitHub",
-			url: "https://github.com/tachibana777",
-			external: true,
-		},
 	],
 };
 
