@@ -17,7 +17,8 @@ export const siteConfig: SiteConfig = {
 	},
 	banner: {
 		enable: true,
-		src: "assets/images/serene-night-banner.webp", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		src: "assets/images/gabimaru-light-banner.webp", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		srcDark: "assets/images/suzume-door-banner.webp",
 		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
 			enable: false, // Display the credit text of the banner image
@@ -48,7 +49,8 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/tachibana777-avatar.webp", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+	avatar: "assets/images/white-hair-cat-avatar.webp", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+	avatarDark: "assets/images/shadow-avatar-square.webp",
 	name: "tachibana777",
 	bio: "Humm...",
 	links: [

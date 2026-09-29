@@ -4,6 +4,7 @@ import path from "node:path";
 interface Props {
 	id?: string;
 	src: string;
+	srcDark?: string;
 	class?: string;
 	alt?: string;
 	position?: string;
@@ -14,7 +15,7 @@ interface Props {
 import { Image } from "astro:assets";
 import { url } from "../../utils/url-utils";
 
-const { id, src, alt, position = "center", basePath = "/", loading } = Astro.props;
+const { id, src, srcDark, alt, position = "center", basePath = "/", loading } = Astro.props;
 const className = Astro.props.class;
 
 const isLocal = !(
@@ -41,16 +42,47 @@ if (isLocal) {
 		console.error(
 			`\n[ERROR] Image file not found: ${normalizedPath.replace("../../", "src/")}`,
 		);
+	} else {
+		img = await file();
 	}
-	img = await file();
+}
+
+let imgDark;
+const hasDark = Boolean(srcDark);
+const isDarkLocal = hasDark && !(
+	srcDark!.startsWith("/") ||
+	srcDark!.startsWith("http") ||
+	srcDark!.startsWith("https") ||
+	srcDark!.startsWith("data:")
+);
+const isDarkPublic = hasDark && srcDark!.startsWith("/");
+
+if (hasDark && isDarkLocal) {
+	const files = import.meta.glob<ImageMetadata>("../../**", {
+		import: "default",
+	});
+	let normalizedPath = path
+		.normalize(path.join("../../", basePath, srcDark!))
+		.replace(/\\/g, "/");
+	const file = files[normalizedPath];
+	if (!file) {
+		console.error(
+			`\n[ERROR] Dark image file not found: ${normalizedPath.replace("../../", "src/")}`,
+		);
+	} else {
+		imgDark = await file();
+	}
 }
 
 const imageClass = "w-full h-full object-cover";
 const imageStyle = `object-position: ${position}`;
-const imageLoading = loading || (id === "banner" ? "eager" : "lazy");
+const imageLoading = loading || (id === "banner" || id === "profile-avatar" ? "eager" : "lazy");
+const imageDecoding = (id === "banner" || id === "profile-avatar") ? "sync" : "async";
 ---
 <div id={id} class:list={[className, 'overflow-hidden relative']}>
     <div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none"></div>
-    {isLocal && img && <Image src={img} alt={alt || ""} class={imageClass} style={imageStyle} loading={imageLoading} decoding="async"/>}
-    {!isLocal && <img src={isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle} loading={imageLoading} decoding="async"/>}
+    {isLocal && img && <Image src={img} alt={alt || ""} class:list={[imageClass, hasDark ? "block dark:hidden" : ""]} style={imageStyle} loading={imageLoading} decoding={imageDecoding}/>}
+    {!isLocal && <img src={isPublic ? url(src) : src} alt={alt || ""} class:list={[imageClass, hasDark ? "block dark:hidden" : ""]} style={imageStyle} loading={imageLoading} decoding={imageDecoding}/>}
+    {hasDark && isDarkLocal && imgDark && <Image src={imgDark} alt={alt || ""} class:list={[imageClass, "hidden dark:block"]} style={imageStyle} loading={imageLoading} decoding={imageDecoding}/>}
+    {hasDark && !isDarkLocal && <img src={isDarkPublic ? url(srcDark!) : srcDark} alt={alt || ""} class:list={[imageClass, "hidden dark:block"]} style={imageStyle} loading={imageLoading} decoding={imageDecoding}/>}
 </div>

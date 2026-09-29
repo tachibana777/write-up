@@ -70,19 +70,34 @@ export function setTheme(theme: LIGHT_DARK_MODE, withTransition = false): void {
 	});
 
 	transition.ready.then(() => {
+		const clipPath = [
+			"polygon(-100% -100%, 95% -100%, -100% 95%)",
+			"polygon(-100% -100%, 305% -100%, -100% 305%)",
+		];
+		const timing = {
+			duration: 550,
+			easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+		};
+
 		document.documentElement.animate(
+			{ clipPath },
 			{
-				clipPath: [
-					"polygon(-100% -100%, 95% -100%, -100% 95%)",
-					"polygon(-100% -100%, 305% -100%, -100% 305%)",
-				],
-			},
-			{
-				duration: 550,
-				easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+				...timing,
 				pseudoElement: "::view-transition-new(root)",
 			},
 		);
+
+		try {
+			document.documentElement.animate(
+				{ clipPath },
+				{
+					...timing,
+					pseudoElement: "::view-transition-new(profile-avatar)",
+				},
+			);
+		} catch {
+			// Profile avatar might not be present on all subpages
+		}
 	});
 }
 

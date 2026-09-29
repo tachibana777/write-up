@@ -23,6 +23,7 @@ export type SiteConfig = {
 	banner: {
 		enable: boolean;
 		src: string;
+		srcDark?: string;
 		position?: "top" | "center" | "bottom";
 		credit: {
 			enable: boolean;
@@ -62,6 +63,7 @@ export type NavBarConfig = {
 
 export type ProfileConfig = {
 	avatar?: string;
+	avatarDark?: string;
 	name: string;
 	bio?: string;
 	links: {

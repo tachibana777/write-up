@@ -1,0 +1,129 @@
+# Write-up: Stupid Encryption (TCTT 2026)
+
+* **โจทย์:** Stupid Encryption
+* **Hint:** "You have been assigned to prove the security of new encryption algorithm developed by junior diverter"
+* **Flag Format:** `TCTT2026{....}`
+
+---
+
+## 1. เปิดไฟล์ก่อนเลยรอช้าอยู่ใย
+
+เปิดไฟล์ `StupidEncryption.txt` เจอข้อความประหลาดที่ลงท้ายด้วยเครื่องหมาย `=` 
+```text
+RkcgRUMgRUYgSUEgRWggRUogRGogREIgSUEgRUggRWUgRUcgRUYgREkgSUEg...=
+```
+เลยคิดว่าน่าจะเป็น **Base64** แน่ ๆ จึงทดลอง Decode ออกมา ได้ผลลัพธ์เป็นกลุ่มตัวอักษรคู่ละ 2 ตัว คั่นด้วยช่องว่าง:
+
+```text
+FG EC EF IA Eh EJ Dj DB IA EH Ee EG EF DI IA DH DG EJ DI EF EG IA ...
+```
+
+---
+
+## 2. เอะใจว่าอาจเป็น Hex แต่ทำไมมีตัวแปลก ๆ?
+
+ตอนแรกมองดูเหมือนเป็น **Hex (เลขฐาน 16)** เพราะมันมาเป็นคู่ละ 2 ตัว 
+แต่พอดูดี ๆ ดันมีตัวอักษรที่เกินตัว `F` (เช่น `G, H, I, J`) และมีตัวพิมพ์เล็กด้วย (`e, f, g, h, i, j`) เลยแอบสงสัย
+
+**เลยลองพิสูจน์:**  
+ใช้วิธี **"นับจำนวนตัวอักษรที่ไม่ซ้ำกัน"** ในข้อความทั้งหมด เพื่อเช็คว่าคือระบบฐาน 16 จริงไหม:
+* ตัวพิมพ์ใหญ่: `A, B, C, D, E, F, G, H, I, J` = **10 ตัว**
+* ตัวพิมพ์เล็ก: `e, f, g, h, i, j` = **6 ตัว**
+* **รวมกันได้ 10 + 6 = 16 ตัวพอดีเป๊ะ!**
+
+ทำให้มั่นใจ 100% ว่ามันคือ Hex ฐาน 16 แน่นอน เพียงแต่คนออกโจทย์เอาตัวอักษรอื่นมาแทนที่ (Substitution)
+
+---
+
+## 3. ทางลัด: ใช้รูปแบบ Format Flag `TCTT2026{` แกะตารางแปลงค่า
+
+เนื่องจากข้อความยาวและดูรกตามาก จึงใช้วิธีหาท่อนที่เป็น **`TCTT2026{`** จากในข้อความ โดยนำไปเปิดเทียบกับค่า Hex ใน **ASCII Table**:
+
+| ตัวอักษรจริง | ค่า Hex จากตาราง ASCII | Token ในโจทย์ | สิ่งที่เรารู้ทันที |
+|:---:|:---:|:---:|:---|
+| **T** | `54` | **FG** | `F = 5`, `G = 4` |
+| **C** | `43` | **GH** | `H = 3` (ยืนยัน `G = 4`) |
+| **T** | `54` | **FG** | `F = 5`, `G = 4` |
+| **T** | `54` | **FG** | `F = 5`, `G = 4` |
+| **2** | `32` | **HI** | `I = 2` (ยืนยัน `H = 3`) |
+| **0** | `30` | **HA** | `A = 0` (ยืนยัน `H = 3`) |
+| **2** | `32` | **HI** | `I = 2` |
+| **6** | `36` | **HE** | `E = 6` |
+| **{** | `7b` | **Di** | `D = 7`, `i = b` |
+| **}** | `7d` | **Dg** | `D = 7`, `g = d` |
+
+---
+
+## 4. จับ Pattern: คนเขียนโจทย์ 
+
+พอนำผลลัพธ์ที่แกะได้มาเรียงต่อกัน จะเห็นภาพชัดเจนว่าคนออกโจทย์ใช้วิธี **นับตัวอักษรถอยหลัง**:
+
+### 4.1 ตัวเลข 0-9 (ตัวพิมพ์ใหญ่ A-J)
+* `A` คงที่ไว้เท่ากับ **`0`**
+* ที่เหลือ `B ถึง J` นับถอยหลังจาก **`9 ลงไปถึง 1`**:
+```text
+ตัวอักษร:  A | J  I  H  G  F  E  D  C  B
+ตัวเลข:    0 | 1  2  3  4  5  6  7  8  9
+```
+
+### 4.2 ตัวอักษร a-f (ตัวพิมพ์เล็ก e-j)
+* สลับหัวท้ายนับถอยหลังเช่นกัน:
+```text
+ตัวอักษรในโจทย์:  j  i  h  g  f  e
+ตัวอักษร Hex:    a  b  c  d  e  f
+```
+
+---
+
+## 5. เขียนโค้ดเพื่อถอดรหัส (`stu.py`)
+
+นำตารางที่แกะได้มาเขียนเป็นโปรแกรม Python เพื่อแปลงข้อความทั้งหมด:
+
+```python
+import base64
+
+cipher = """RkcgRUMgRUYgSUEgRWggRUogRGogREIgSUEgRUggRWUgRUcgRUYgREkgSUEgREggREcgRUogREkgRUYgRUcgSUEgRUogREcgSUEgREcgRUMgRUYgSUEgRUkgRWggRUIgRWYgRWkgRUIgRWYgRUQgSUEgRUggREYgREkgREggRWUgREkgSWggSUEgRUMgRWUgREEgRUIgRWYgRUQgSUEgREcgRUMgRUYgSUEgREEgREkgRWUgRUQgREkgRUogRWcgSUEgRWcgRUIgRUQgRUMgREcgSUEgREQgREkgRUIgREcgRUYgSUEgRUIgREcgREggRUYgRWggRUUgSWYgSUEgR0ogRUUgREcgRUYgREkgSUEgREcgRUYgRWYgSUEgRWcgRUIgRWYgREYgREcgRUYgREggSUEgRWUgRUUgSUEgRUIgRWYgREcgRUYgRWYgREggRUYgSUEgREEgREkgRWUgRUggREkgRUogREggREcgRUIgRWYgRUogREcgRUIgRWUgRWYgSWggSUEgREcgRUMgREkgRUYgRUYgSUEgRUggREYgREEgREggSUEgRWUgRUUgSUEgRUggRWUgRUUgRUUgRUYgRUYgSWggSUEgRUogRWYgRUcgSUEgRWUgRWYgRUYgSUEgREYgRWYgRWYgRUYgRUggRUYgREggREggRUogREkgREIgSUEgRUUgREkgRUogRWcgRUYgREQgRWUgREkgRWkgSUEgREYgREEgRUQgREkgRUogRUcgRUYgSWggSUEgREcgRUMgRUYgREIgSUEgRUUgRUIgRWYgRUogRWggRWggREIgSUEgREggRWUgRWggREUgRUYgRUcgSUEgREcgRUMgRUYgSUEgREEgREkgRWUgRUkgRWggRUYgRWcgSUEgREQgRUIgREcgRUMgSUEgRUogSUEgREggRUIgREMgSWcgRWggRUIgRWYgRUYgSUEgRUUgREYgRWYgRUggREcgRUIgRWUgRWYgSUEgRUggRWUgREEgRUIgRUYgRUcgSUEgRUUgREkgRWUgRWcgSUEgRUogRWYgSUEgRWUgRWggRUcgSUEgREEgREkgRWUgRWogRUYgRUggREcgSWYgSUEgR0IgREcgSUEgREQgRWUgREkgRWkgRUYgRUcgSUEgREEgRUYgREkgRUUgRUYgRUggREcgRWggREIgSWggSUEgREggRWUgSUEgREcgRUMgRUYgREIgSUEgRUogRUcgRUcgRUYgRUcgSUEgRWUgREEgREcgRUIgRWcgRUIgRGogRUYgSUEgRWggRUogREcgRUYgREkgSUEgREcgRWUgSUEgREcgRUMgRUYgSUEgRUggRWUgRWcgRWcgRUYgRWYgREcgREggSWggSUEgRUggRWUgRWcgRWcgRUIgREcgREcgRUYgRUcgSUEgREcgRUMgRUYgSUEgRUggRWUgRUcgRUYgSWggSUEgRUogRWYgRUcgSUEgREcgRWUgRWUgRWkgSUEgRUogSUEgREQgRUYgRWggRWggSWcgRUYgRUogREkgRWYgRUYgRUcgSUEgRWYgRUogREEgSWYgSUEgR0UgRWggRUogRUQgSUEgRUIgREggSUEgRkcgR0ggRkcgRkcgSEkgSEEgSEkgSEUgRGkgRkMgR2ggR0ogRmogRkIgRkMgR0ggSEEgR0cgSEggRkkgRkMgRGcgSUEgSWogSWogSUEgR2ggRUYgREggRWUgRWYgSUEgR2ggRUYgRUogREkgRWYgSUEgSGogSUEgR0cgRUYgREUgSUEgRkIgRWUgREYgREkgSUEgR2UgREQgRUYgRWYgSUEgR0YgRWYgRUggREkgREIgREEgREcgSUEgR0ogRWggRUQgRWUgREkgRUIgREcgRUMgRWcgSWggSUEgRUIgREcgSUEgRWYgRWUgREcgSUEgREggRUYgRUggREYgREkgRUYgSUEgRUogRWYgRUcgSUEgR0ogR0IgSUEgRUggRUogRWYgSUEgRUYgRUogREggRUIgRWggREIgSUEgRUcgRUYgREcgRUYgRUggREcgSUEgREcgRUMgRUYgSUEgREEgRUogREcgREcgRUYgREkgRWYgSUEgRUogRWYgRUcgSUEgRUcgRUYgRUggRWUgRUcgRUYgSUEgRUIgREcgSWY="""
+
+# Layer 1: Base64 Decode
+decoded = base64.b64decode(cipher).decode()
+
+# Layer 2: Custom Hex Mapping
+decode_map = {
+    'A': '0', 'J': '1', 'I': '2', 'H': '3', 'G': '4',
+    'F': '5', 'E': '6', 'D': '7', 'C': '8', 'B': '9',
+    'j': 'a', 'i': 'b', 'h': 'c', 'g': 'd', 'f': 'e', 'e': 'f'
+}
+
+def decode_token(token):
+    high = decode_map[token[0]]
+    low = decode_map[token[1]]
+    return chr(int(high + low, 16))
+
+plaintext = ''.join(
+    decode_token(token) if token != '' else ''
+    for token in decoded.split()
+)
+
+print(plaintext)
+```
+
+---
+
+## 6. ผลลัพธ์ที่ได้
+
+```text
+The lazy coder stared at the blinking cursor, hoping the program might write itself. 
+After ten minutes of intense procrastination, three cups of coffee, and one unnecessary 
+framework upgrade, they finally solved the problem with a six-line function copied from 
+an old project. It worked perfectly, so they added optimize later to the comments, 
+committed the code, and took a well-earned nap. 
+
+Flag is TCTT2026{XLAZYXC0D3RX} 
+
+** Leson Learn : Dev Your Owen Encrypt Algorithm, it not secure and AI can easily detect the pattern and decode it.
+```
+
+### 🚩 Flag:
+```text
+TCTT2026{XLAZYXC0D3RX}
+```

